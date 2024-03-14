@@ -1,0 +1,10 @@
+name: coderhouse-de-02
+channels:
+  - defaults
+dependencies:
+  - python=3.9.18
+  - pip
+  - pip:
+      - pip==24.0
+      - psycopg2==2.9.9
+      - requests==2.31.0
