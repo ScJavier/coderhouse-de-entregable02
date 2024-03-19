@@ -1,2 +1,4 @@
 creds.json
 .ipynb_checkpoints
+utils/__pycache__/
+__pycache__/
