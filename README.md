@@ -8,7 +8,7 @@ This Jupyter Notebook contains code for creating the target table in the databas
 
 ### 2-load-data-to-rds.ipynb
 
-This Jupyter Notebook uses functions defined in utils to get exchange rates from many currencies from Frankfuter API, transform the daily rates to monthly rates by taking the mean, validates format and data, and finally uploads data to DB.
+This Jupyter Notebook uses functions defined in utils to get exchange rates from many currencies from Frankfuter API, transform the daily rates to monthly rates by taking the mean, validates format and data, and finally uploads data to DB. Only new data of currency and date is uploaded, duplicated data is ignored.
 
 ### utils/
 

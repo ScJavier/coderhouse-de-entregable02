@@ -1,8 +1,13 @@
 from psycopg2.extras import execute_batch
+from psycopg2 import DatabaseError
 
 def load_df_to_db(df, table, conn, batch_size=100):
     """
     Load DataFrame data into a database table.
+
+    This function inserts data from a DataFrame into a specified database table,
+    ensuring that only new data is added to the table without duplicates based on
+    currency and rate_date columns.
 
     Args:
         df (pandas.DataFrame): The DataFrame containing the data to load.
@@ -11,30 +16,31 @@ def load_df_to_db(df, table, conn, batch_size=100):
         batch_size (int, optional): The batch size for batch insertion. Defaults to 100.
     
     Returns:
-        int: 1 if an error occurred during execution, otherwise None.
+        None: If data insertion is successful.
     """
+    try:        
+        # Construct the INSERT query for inserting new data into the table
+        cols = ','.join(df.columns)
+        insert_query = f"""
+        INSERT INTO {table} ({cols}) 
+        SELECT %s, %s, %s 
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM {table} 
+            WHERE currency = %s AND rate_date = %s
+        )
+        """
 
-    # Construct the DELETE query to remove existing data from the table
-    delete_query = f"DELETE FROM {table}"
-    
-    # Construct the INSERT query for inserting new data into the table
-    cols = ','.join(df.columns)
-    insert_query = f"INSERT INTO {table} ({cols}) VALUES (%s, %s, %s)"
-
-    # Generate data tuples from the DataFrame
-    data_generator = ((row[0], row[1], row[2]) for row in df.itertuples(index=False))
-
-    # Execute operations within a cursor context
-    with conn.cursor() as cursor:
-        try:
-            # Execute the DELETE query to remove existing data
-            cursor.execute(delete_query)
-            print("Existing data deleted.")
-
+        # Generate data tuples from the DataFrame
+        data_generator = ((row[0], row[1], row[2], row[0], row[1]) for row in df.itertuples(index=False))
+        
+        # Execute operations within a cursor context
+        with conn.cursor() as cursor:
             # Execute batch insertion of new data
             execute_batch(cursor, insert_query, data_generator, page_size=batch_size)
             conn.commit()
             print("Data insertion completed.")
-        except psycopg2.DatabaseError as e:
-            print(f"Error executing batch: {e}")
-            conn.rollback()
+            
+    except DatabaseError as e:
+        print(f"Error executing batch: {e}")
+        conn.rollback()
